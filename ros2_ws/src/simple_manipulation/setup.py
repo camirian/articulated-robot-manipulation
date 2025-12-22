@@ -26,6 +26,8 @@ setup(
         'console_scripts': [
             'manipulation_controller = simple_manipulation.manipulation_controller:main',
             'simple_trajectory_server = simple_manipulation.simple_trajectory_server:main',
+            'perception_node = simple_manipulation.perception_node:main',
+            'perform_pick = simple_manipulation.perform_pick:main',
         ],
     },
 )

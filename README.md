@@ -35,6 +35,14 @@ Upgrade of the control system to use **MoveIt 2**, the industry standard for mot
 -   **Bridge Node:** `simple_trajectory_server` translates MoveIt's `FollowJointTrajectory` actions into direct `JointState` commands for Isaac Sim.
 -   **Integration:** Full MoveIt stack (MoveGroup, RViz) integrated with the simulation.
 
+### Project 3.3: Perception Pipeline (Visual Servoing)
+
+Implementation of a closed-loop perception system allowing the robot to detect and interact with objects in the environment.
+
+-   **RGB-D Processing:** Uses OpenCV to detect objects (Red Cube) based on color and depth data from a wrist-mounted camera.
+-   **Projection:** Converts 2D pixel coordinates + Depth into precise 3D World Coordinates for the robot.
+-   **Visual Servoing:** A coordinator node (`perform_pick`) dynamically commands the MoveIt interface to move the arm to the detected object's location.
+
 ---
 
 ## 🛠️ How to Build and Run
@@ -42,7 +50,7 @@ Upgrade of the control system to use **MoveIt 2**, the industry standard for mot
 ### 1. Build the Workspace
 ```bash
 cd ~/dev/personal/ai-robotics-portfolio/articulated-robot-manipulation/ros2_ws
-colcon build
+colcon build --symlink-install
 source install/setup.bash
 ```
 
@@ -70,6 +78,21 @@ source ros2_ws/install/setup.bash
 ros2 launch simple_manipulation bringup_moveit.launch.py
 ```
 *In RViz, drag the interactive marker and click "Plan & Execute" to move the robot in the simulator.*
+
+**Option C: Perception & Pick (Project 3.3)**
+**Open Terminal 2 (System):**
+```bash
+source ros2_ws/install/setup.bash
+ros2 launch simple_manipulation visual_pick.launch.py
+```
+*(Verify "Status: Ok" for Robot and Image in RViz)*
+
+**Open Terminal 3 (Action):**
+```bash
+source ros2_ws/install/setup.bash
+ros2 run simple_manipulation perform_pick
+```
+*(The robot will detect the cube and verify alignment by hovering above it)*
 
 ---
 
