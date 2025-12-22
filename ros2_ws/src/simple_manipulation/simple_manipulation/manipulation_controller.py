@@ -1,7 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from builtin_interfaces.msg import Duration
+from sensor_msgs.msg import JointState
 
 class ManipulationController(Node):
     """
@@ -13,7 +12,7 @@ class ManipulationController(Node):
         super().__init__('manipulation_controller')
         
         # Publisher for the robot's joint commands
-        self.publisher_ = self.create_publisher(JointTrajectory, '/franka_joint_trajectory_controller/joint_trajectory', 10)
+        self.publisher_ = self.create_publisher(JointState, '/joint_command', 10)
         
         # Timer to drive the state machine
         self.timer = self.create_timer(2.0, self.state_machine_callback)
@@ -74,16 +73,14 @@ class ManipulationController(Node):
 
     def publish_joint_command(self, positions):
         """
-        Publishes a JointTrajectory message to the robot's controller.
+        Publishes a JointState message to the robot's controller.
         """
-        msg = JointTrajectory()
-        msg.joint_names = self.joint_names
+        msg = JointState()
+        msg.name = self.joint_names
+        msg.position = [float(p) for p in positions]
+        # msg.velocity = [] # Optional
+        # msg.effort = []   # Optional
         
-        point = JointTrajectoryPoint()
-        point.positions = [float(p) for p in positions]
-        point.time_from_start = Duration(sec=1, nanosec=0)
-        
-        msg.points.append(point)
         self.publisher_.publish(msg)
         self.get_logger().info('Published joint command.')
 

@@ -27,24 +27,49 @@ A ROS 2 package (`simple_manipulation`) that implements a state-machine-based co
 
 ---
 
+### Project 3.2: MoveIt 2 Integration (Dynamic Planning)
+
+Upgrade of the control system to use **MoveIt 2**, the industry standard for motion planning.
+
+-   **Dynamic Planning:** Instead of hardcoded joint angles, we define target *poses* (e.g., "Move gripper to [x, y, z]"). MoveIt calculates the collision-free path.
+-   **Bridge Node:** `simple_trajectory_server` translates MoveIt's `FollowJointTrajectory` actions into direct `JointState` commands for Isaac Sim.
+-   **Integration:** Full MoveIt stack (MoveGroup, RViz) integrated with the simulation.
+
+---
+
 ## 🛠️ How to Build and Run
 
-1.  Navigate to the workspace:
-    ```bash
-    cd ~/dev/personal/ai-robotics-portfolio/articulated-robot-manipulation/ros2_ws
-    ```
-2.  Build the package:
-    ```bash
-    colcon build
-    ```
-3.  Source the overlay:
-    ```bash
-    source install/setup.bash
-    ```
-4.  Run the controller:
-    ```bash
-    ros2 run simple_manipulation manipulation_controller
-    ```
+### 1. Build the Workspace
+```bash
+cd ~/dev/personal/ai-robotics-portfolio/articulated-robot-manipulation/ros2_ws
+colcon build
+source install/setup.bash
+```
+
+### 2. Launch the Simulation (Isaac Sim)
+We use a custom Python script to automate the environment setup (loading robot + ROS 2 Bridge).
+**Open Terminal 1:**
+```bash
+~/isaac-sim-4.5.0/python.sh scripts/sim_setup.py
+```
+*Wait for the robot to appear.*
+
+### 3. Run a Project
+
+**Option A: Simple State Machine (Project 3.1)**
+**Open Terminal 2:**
+```bash
+source ros2_ws/install/setup.bash
+ros2 run simple_manipulation manipulation_controller
+```
+
+**Option B: MoveIt 2 Demo (Project 3.2)**
+**Open Terminal 2:**
+```bash
+source ros2_ws/install/setup.bash
+ros2 launch simple_manipulation bringup_moveit.launch.py
+```
+*In RViz, drag the interactive marker and click "Plan & Execute" to move the robot in the simulator.*
 
 ---
 
