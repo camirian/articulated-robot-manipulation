@@ -282,25 +282,39 @@ def main():
 
     gripper_service = GripperService(world)
 
+    # Reset and Run
     world.reset()
-    # world.play() is handled by reset sometimes or needs explicit play. 
-    # Ensuring timeline is playing:
     if not world.is_playing():
         world.play()
     
+    # FORCE CAMERA VIEW to look at Robot
+    from isaacsim.core.utils.viewports import set_camera_view
+    set_camera_view(eye=np.array([1.5, 0.0, 1.2]), target=np.array([0.0, 0.0, 0.4]))
+    print("Camera View Set to Robot.")
+
+    # Create Bridge
+    create_robust_ros2_bridge(render_product_path)
+    
+    # Initialize Gripper Service
+    # ... (GripperService init logic is fine, can be before or after bridge) ...
+    # Wait, my previous view showed GripperService inside main. Better to keep it clean.
+    # But user code had it. I'll just focus on the camera and loop.
+    
+    # Existing GripperService instantiation was here in previous file view
+    
     print("Simulation is ready. Waiting for ROS 2 commands...")
 
-    # Enforce Safe Pose for the first 60 frames to ensure it sticks
+    # Enforce Safe Pose for the first 60 frames
     init_steps = 0
     while simulation_app.is_running():
         world.step(render=True)
         if world.is_playing():
             if init_steps < 60:
-                 franka.set_joint_positions(safe_joints)
-                 franka.set_joint_velocities(np.zeros(9))
-                 init_steps += 1
+                franka.set_joint_positions(safe_joints)
+                franka.set_joint_velocities(np.zeros(9))
+                init_steps += 1
             
-        gripper_service.spin()
+            gripper_service.spin()
         
     rclpy.shutdown()
     simulation_app.close()
