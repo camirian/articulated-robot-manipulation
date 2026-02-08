@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -24,7 +25,7 @@ if(BUILD_TESTING)
 endif()
 
 add_executable(move_to_pose src/move_to_pose.cpp)
-ament_target_dependencies(move_to_pose rclcpp moveit_ros_planning_interface geometry_msgs)
+ament_target_dependencies(move_to_pose rclcpp moveit_ros_planning_interface geometry_msgs std_msgs)
 
 install(TARGETS
   move_to_pose

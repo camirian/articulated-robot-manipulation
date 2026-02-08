@@ -11,18 +11,25 @@ class SimpleTrajectoryServer(Node):
     def __init__(self):
         super().__init__('simple_trajectory_server')
         
-        # Action Server
-        self._action_server = ActionServer(
+        # Action Servers
+        self._arm_server = ActionServer(
             self,
             FollowJointTrajectory,
             '/panda_arm_controller/follow_joint_trajectory',
             self.execute_callback
         )
         
-        # Publisher to Isaac Sim
+        self._hand_server = ActionServer(
+            self,
+            FollowJointTrajectory,
+            '/panda_hand_controller/follow_joint_trajectory',
+            self.execute_callback
+        )
+        
+        # Publisher to Isaac Sim (Global topic for all joints)
         self.publisher_ = self.create_publisher(JointState, '/joint_command', 10)
         
-        self.get_logger().info('Simple Trajectory Server has been started.')
+        self.get_logger().info('Simple Trajectory Server (Arm + Hand) has been started.')
 
     def execute_callback(self, goal_handle):
         self.get_logger().info('Executing goal...')

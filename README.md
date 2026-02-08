@@ -24,6 +24,7 @@ A ROS 2 package (`simple_manipulation`) that implements a state-machine-based co
 -   **Node:** `manipulation_controller`
 -   **Logic:** Cycles through a predefined sequence of poses to simulate a pick-and-place operation.
 -   **Interface:** Publishes to `/franka_joint_trajectory_controller/joint_trajectory`.
+-   **[Video Demonstration](LINK_TO_PROJECT_3.1_VIDEO)**
 
 ---
 
@@ -34,6 +35,7 @@ Upgrade of the control system to use **MoveIt 2**, the industry standard for mot
 -   **Dynamic Planning:** Instead of hardcoded joint angles, we define target *poses* (e.g., "Move gripper to [x, y, z]"). MoveIt calculates the collision-free path.
 -   **Bridge Node:** `simple_trajectory_server` translates MoveIt's `FollowJointTrajectory` actions into direct `JointState` commands for Isaac Sim.
 -   **Integration:** Full MoveIt stack (MoveGroup, RViz) integrated with the simulation.
+-   **[Video Demonstration](LINK_TO_PROJECT_3.2_VIDEO)**
 
 ### Project 3.3: Perception Pipeline (Visual Servoing)
 
@@ -42,6 +44,7 @@ Implementation of a closed-loop perception system allowing the robot to detect a
 -   **RGB-D Processing:** Uses OpenCV to detect objects (Red Cube) based on color and depth data from a wrist-mounted camera.
 -   **Projection:** Converts 2D pixel coordinates + Depth into precise 3D World Coordinates for the robot.
 -   **Visual Servoing:** A coordinator node (`perform_pick`) dynamically commands the MoveIt interface to move the arm to the detected object's location.
+-   **[Video Demonstration](PASTE_YOUR_NEW_YOUTUBE_LINK_HERE)**
 
 ---
 
@@ -54,37 +57,14 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-### 2. Launch the Simulation (Isaac Sim)
-We use a custom Python script to automate the environment setup (loading robot + ROS 2 Bridge).
-**Open Terminal 1:**
+### **Terminal 1: The Simulation (Isaac Sim)**
+**Crucial:** You must use the python wrapper provided by Isaac Sim to access its libraries.
+
 ```bash
+# Start the Simulation and ROS 2 Bridge
 ~/isaac-sim-4.5.0/python.sh scripts/sim_setup.py
 ```
-*Wait for the robot to appear.*
-
-### 3. Run a Project
-
-**Option A: Simple State Machine (Project 3.1)**
-**Open Terminal 2:**
-```bash
-source ros2_ws/install/setup.bash
-ros2 run simple_manipulation manipulation_controller
-```
-
-**Option B: MoveIt 2 Demo (Project 3.2)**
-**Open Terminal 2:**
-```bash
-source ros2_ws/install/setup.bash
-ros2 launch simple_manipulation bringup_moveit.launch.py
-```
-*In RViz, drag the interactive marker and click "Plan & Execute" to move the robot in the simulator.*
-
-**Option C: Perception & Pick (Project 3.3)**
-**Open Terminal 2 (System):**
-```bash
-source ros2_ws/install/setup.bash
-ros2 launch simple_manipulation visual_pick.launch.py
-```
+*Wait for Isaac Sim to load. If it doesn't auto-play, press the **PLAY** button in the UI.*
 *(Verify "Status: Ok" for Robot and Image in RViz)*
 
 **Open Terminal 3 (Action):**

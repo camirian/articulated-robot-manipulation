@@ -8,35 +8,81 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     
-    # Load the MoveIt configuration from the standard package
+    # === DIRECT INJECTION STRATEGY ===
+    # Load MoveIt configuration manually to bypass MoveItConfigsBuilder's CHOMP defaults
+    import yaml
+    
+    simple_manipulation_pkg = get_package_share_directory("simple_manipulation")
+    panda_moveit_config_pkg = get_package_share_directory("moveit_resources_panda_moveit_config")
+    
+    #Load custom SRDF
+    srdf_path = os.path.join(simple_manipulation_pkg, "config", "panda.srdf")
+    
+    # Use Move ItConfigsBuilder with planning_pipelines
     moveit_config = (
         MoveItConfigsBuilder("moveit_resources_panda")
         .robot_description(file_path="config/panda.urdf.xacro")
+        .robot_description_semantic(file_path=srdf_path)  
+        .planning_pipelines(pipelines=["ompl"])
         .to_moveit_configs()
     )
+    
+    # Load trajectory controllers configuration
+    controllers_yaml_path = os.path.join(panda_moveit_config_pkg, "config", "moveit_controllers.yaml")
+    with open(controllers_yaml_path, 'r') as file:
+        controllers_config = yaml.safe_load(file)
+    
+    # Trajectory execution parameters
+    trajectory_execution_params = {
+        "moveit_controller_manager": "moveit_simple_controller_manager/MoveItSimpleControllerManager",
+        "moveit_manage_controllers": True,
+        "trajectory_execution.allowed_execution_duration_scaling": 1.2,
+        "trajectory_execution.allowed_goal_duration_margin": 0.5,
+        "trajectory_execution.allowed_start_tolerance": 0.1,
+    }
 
     # Move Group Node
     move_group_node = Node(
         package="moveit_ros_move_group",
         executable="move_group",
         output="screen",
-        parameters=[moveit_config.to_dict(), {'use_sim_time': True}],
+        parameters=[
+            moveit_config.to_dict(),
+            controllers_config,
+            trajectory_execution_params,
+            {'use_sim_time': True},
+            {'default_planning_pipeline': 'ompl'},
+        ],
         arguments=["--ros-args", "--log-level", "info"],
     )
 
-    # RViz
+    # RViz Config File
     rviz_config_file = os.path.join(
         get_package_share_directory("moveit_resources_panda_moveit_config"),
         "config",
         "moveit.rviz",
     )
+
+    # Declare Launch Argument for RViz
+    launch_rviz_arg = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='true',
+        description='Whether to launch RViz'
+    )
+
+    from launch.conditions import IfCondition
     
+    moveit_config_file = os.path.join(
+        get_package_share_directory('simple_manipulation'),
+        'rviz',
+        'moveit.rviz')
+
     rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        output="log",
-        arguments=["-d", rviz_config_file],
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='log',
+        arguments=['-d', moveit_config_file],
         parameters=[
             moveit_config.robot_description,
             moveit_config.robot_description_semantic,
@@ -44,6 +90,7 @@ def generate_launch_description():
             moveit_config.robot_description_kinematics,
             {'use_sim_time': True},
         ],
+        condition=IfCondition(LaunchConfiguration('use_rviz'))
     )
 
     # Simple Trajectory Server (Bridge to Isaac Sim)
@@ -73,10 +120,15 @@ def generate_launch_description():
         executable="robot_state_publisher",
         name="robot_state_publisher",
         output="both",
-        parameters=[moveit_config.robot_description, {'use_sim_time': True}],
+        parameters=[
+            moveit_config.to_dict(),
+            {'use_sim_time': True},
+            {'trajectory_execution.allowed_start_tolerance': 0.1}
+        ],
     )
 
     return LaunchDescription([
+        launch_rviz_arg,
         static_tf,
         robot_state_publisher,
         trajectory_server_node,

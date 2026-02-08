@@ -48,13 +48,31 @@ def generate_launch_description():
         output='screen'
     )
     
+    # Load MoveIt Configs to pass to the C++ Interface Node
+    from moveit_configs_utils import MoveItConfigsBuilder
+    moveit_config = (
+        MoveItConfigsBuilder("moveit_resources_panda")
+        .robot_description(file_path="config/panda.urdf.xacro")
+        .to_moveit_configs()
+    )
+
     # Move To Pose Interface (C++ Node)
     # This node listens to /target_pose and calls MoveIt
     move_to_pose_node = Node(
         package='simple_moveit_interface',
         executable='move_to_pose',
         name='move_to_pose',
-        output='screen'
+        output='screen',
+        parameters=[
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            moveit_config.robot_description_kinematics,
+            {'use_sim_time': True}
+        ],
+        remappings=[
+            ('target_pose', '/target_pose'),
+            ('robot_status/move_complete', '/robot_status/move_complete')
+        ]
     )
 
     return LaunchDescription([
