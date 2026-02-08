@@ -2,8 +2,10 @@
 # Launches Isaac Sim, loads a Franka robot, and sets up the ROS 2 Bridge for JointTrajectory control.
 
 # Start the simulation app
+import os
 from isaacsim.simulation_app import SimulationApp
-simulation_app = SimulationApp({"headless": False})
+headless_mode = os.environ.get("ISAAC_HEADLESS", "False").lower() == "true"
+simulation_app = SimulationApp({"headless": headless_mode})
 
 # 1. Enable the ROS 2 Bridge Extension IMMEDIATELY
 from isaacsim.core.utils.extensions import enable_extension
@@ -36,6 +38,7 @@ def create_robust_ros2_bridge(render_product_path):
     """
     # 1. Force Enable Extensions
     enable_extension("isaacsim.ros2.bridge")
+    enable_extension("isaacsim.core.nodes") # Required for ArticulationController and ReadSimTime
 
     # 2. Define the Graph Path
     graph_path = "/ActionGraph"
@@ -48,12 +51,12 @@ def create_robust_ros2_bridge(render_product_path):
             {
                 keys.CREATE_NODES: [
                     ("OnPlaybackTick", "omni.graph.action.OnPlaybackTick"),
-                    # Clock and TF
+                    ("ReadSimTime", "isaacsim.core.nodes.IsaacReadSimulationTime"),
                     ("PubClock", "isaacsim.ros2.bridge.ROS2PublishClock"),
                     ("PubTF", "isaacsim.ros2.bridge.ROS2PublishTransformTree"),
                     # Joint Control & State
                     ("SubJoint", "isaacsim.ros2.bridge.ROS2SubscribeJointState"),
-                    ("ArtController", "isaacsim.ros2.bridge.ROS2ArticulationController"),
+                    ("ArtController", "isaacsim.core.nodes.IsaacArticulationController"),
                     ("PubJoint", "isaacsim.ros2.bridge.ROS2PublishJointState"),
                     # Camera
                     ("CamRGB", "isaacsim.ros2.bridge.ROS2CameraHelper"),
@@ -67,6 +70,11 @@ def create_robust_ros2_bridge(render_product_path):
                     ("OnPlaybackTick.outputs:tick", "PubJoint.inputs:execIn"),
                     ("OnPlaybackTick.outputs:tick", "CamRGB.inputs:execIn"),
                     ("OnPlaybackTick.outputs:tick", "CamDepth.inputs:execIn"),
+                    
+                    # Clock & Timestamp
+                    ("ReadSimTime.outputs:simulationTime", "PubClock.inputs:timeStamp"),
+                    ("ReadSimTime.outputs:simulationTime", "PubJoint.inputs:timeStamp"),
+                    
                     # Connect joint subscription to articulation controller
                     ("SubJoint.outputs:jointNames", "ArtController.inputs:jointNames"),
                     ("SubJoint.outputs:positionCommand", "ArtController.inputs:positionCommand"),
@@ -74,12 +82,13 @@ def create_robust_ros2_bridge(render_product_path):
                     ("SubJoint.outputs:effortCommand", "ArtController.inputs:effortCommand"),
                 ],
                 keys.SET_VALUES: [
-                    # TF: Target the robot prim
-                    ("PubTF.inputs:targetPrims", ["/World/Franka"]),
+                    # TF: Publish World to allow attaching robot to world frame
+                    ("PubTF.inputs:parentPrim", "/World"),
                     
                     # Joints
                     ("SubJoint.inputs:topicName", "/joint_command"),
                     ("ArtController.inputs:targetPrim", "/World/Franka"),
+                    ("ArtController.inputs:usePath", True),
                     ("ArtController.inputs:robotPath", "/World/Franka"),
                     ("PubJoint.inputs:topicName", "/joint_states"),
                     ("PubJoint.inputs:targetPrim", "/World/Franka"),
